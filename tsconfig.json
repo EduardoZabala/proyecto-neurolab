@@ -8,6 +8,9 @@
     },
     {
       "path": "./apps/proyecto-siga-backend"
+    },
+    {
+      "path": "./apps/proyecto-siga-frontend"
     }
   ]
 }

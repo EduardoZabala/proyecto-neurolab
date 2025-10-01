@@ -44,3 +44,9 @@ Thumbs.db
 .github/instructions/nx.instructions.md
 
 test-output
+.env
+prisma/migrations/
+
+# Next.js
+.next
+out
