@@ -78,14 +78,13 @@
       },
       "serve": {
         "continuous": true,
-        "executor": "@nx/js:node",
+        "executor": "nx:run-commands",
         "defaultConfiguration": "development",
         "dependsOn": [
           "build"
         ],
         "options": {
-          "buildTarget": "@proyecto-siga/proyecto-siga-backend:build",
-          "runBuildTargetDependencies": false
+          "command": "ts-node-dev -r tsconfig-paths/register apps/proyecto-siga-backend/src/main.ts"
         },
         "configurations": {
           "development": {

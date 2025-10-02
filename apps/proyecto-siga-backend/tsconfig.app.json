@@ -6,11 +6,16 @@
       "node"
     ],
     "rootDir": "../../",
+    "resolveJsonModule": true,
+    "composite": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
     "tsBuildInfoFile": "out-tsc/proyecto-siga-backend/tsconfig.app.tsbuildinfo"
   },
   "include": [
     "src/**/*.ts",
-    "../../packages/**/*.ts"
+    "../../packages/**/*.ts",
+    "../../packages/**/*.json"
   ],
   "exclude": [
     "out-tsc",
