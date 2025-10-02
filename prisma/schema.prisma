@@ -30,21 +30,23 @@ enum assignmentStatus {
 }
 
 model user {
-  userId     String   @id @default(uuid()) @db.Uuid
-  userNumber String   @unique
-  email      String   @unique
-  password   String
-  name       String
-  gender     String?
-  role       userRole
-  isActive   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  userId       String   @id @default(uuid()) @db.Uuid
+  userNumber   String   @unique
+  email        String   @unique
+  password     String
+  name         String
+  gender       String?
+  tokenVersion Int      @default(0)
+  role         userRole
+  isActive     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // relations
-  createdTests  test[]       @relation("testCreatedBy")
-  assignmentsTo assignment[] @relation("assignedTo")
-  assignmentsBy assignment[] @relation("assignedBy")
+  refreshTokens RefreshToken[]
+  createdTests  test[]         @relation("testCreatedBy")
+  assignmentsTo assignment[]   @relation("assignedTo")
+  assignmentsBy assignment[]   @relation("assignedBy")
 
   @@map("user")
 }
@@ -160,4 +162,18 @@ model assignmentScore {
   details        Json?
 
   @@map("assignment_scores")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  jti       String    @unique
+  userId    String    @db.Uuid
+  user      user      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  revokedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  userAgent String?
+  ip        String?
+
+  @@index([userId, revokedAt])
 }
