@@ -47,13 +47,12 @@ const UpdateUserDto = z.object({
 
 // Select fields for user responses
 const selectFields = {
-  id: true,
+  userId: true,
   email: true,
   name: true,
   role: true,
   isActive: true,
-  createdAt: true,
-  lastLogin: true,
+  createdAt: true
 };
 
 // CRUD configuration
@@ -127,7 +126,7 @@ UsersController.patch(
       throw ValidationError("El usuario ya está desactivado");
     }
 
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    await prisma.$transaction(async (tx) => {
 
       await tx.user.update({
         where: { userId: id },
@@ -160,7 +159,7 @@ UsersController.patch(
     }
 
     await prisma.user.update({
-      where: { id },
+      where: { userId: id },
       data: { isActive: true },
     });
 

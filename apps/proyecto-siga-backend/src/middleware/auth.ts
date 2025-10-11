@@ -21,18 +21,18 @@ export interface AuthedRequest extends Request {
 export async function auth(req: AuthedRequest, res: Response, next: NextFunction) {
   const h = req.headers.authorization || ''
   const token = h.startsWith('Bearer ') ? h.slice(7) : null
-  if (!token) return Unauthorized()
+  if (!token) return next(Unauthorized())
 
   try {
     const jwtSecret = process.env.JWT_SECRET
     if (!jwtSecret) {
-      return ServerError('jwt clave no está configurado')
+      return next(ServerError('jwt clave no está configurado'))
     }
     const payload: any = jwt.verify(token, jwtSecret)
     
    
     if (!payload.sub || !payload.role || !payload.email) {
-      return Unauthorized('Token inválido')
+      return next(Unauthorized('Token inválido'))
     }
 
     req.user = { id: payload.sub, role: payload.role, email: payload.email }
@@ -40,16 +40,16 @@ export async function auth(req: AuthedRequest, res: Response, next: NextFunction
     const check = (process.env.JWT_CHECK_VERSION_ON_EVERY_REQUEST ?? 'true') === 'true'
     if (!check) return next()
     const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
+      where: { userId: payload.sub },
       select: { tokenVersion: true },
     })
 
     if (!user || user.tokenVersion !== payload.tver) {
-      return Unauthorized('Token inválido (version)')
+      return next(Unauthorized('Token inválido (version)'))
     }
     next()
-  } catch {
-    return Unauthorized('Token inválido')
+  } catch (error) {
+    return next(ServerError('Errror inesperado verificando token', { detail: error }))
   }
 }
 

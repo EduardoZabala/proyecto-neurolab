@@ -1,11 +1,12 @@
 import swaggerAutogen from 'swagger-autogen';
-
+import path from 'path';
+const __dirname = path.dirname(__filename);
 const doc = {
   info: {
     title: 'Neurolab API',
     description: 'Documentación de API generada automáticamente',
   },
-  host: 'localhost:6001',
+  host: 'localhost:6001/api',
   schemes: ['http'],
   securityDefinitions: {
     BearerAuth: {
@@ -18,7 +19,8 @@ const doc = {
   security: [{ BearerAuth: [] }]
 };
 
+console.log(__dirname)
 const outputFile = './swagger-output.json'; 
-const endpointsFiles = ['../routes/routes.ts']; 
+const endpointsFiles = ['../../apps/proyecto-siga-backend/src/routes/routes.ts']; 
 
 swaggerAutogen({ openapi: '3.0.0' })(outputFile, endpointsFiles, doc)

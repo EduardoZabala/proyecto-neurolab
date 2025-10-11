@@ -108,16 +108,6 @@ export function errorHandler(
   });
 }
 
-export function asyncHandler<
-  Req extends Request = Request,
-  Res extends Response = Response,
-  R = any
->(fn: (req: Req, res: Res, next: NextFunction) => Promise<R>) {
-  return (req: Req, res: Res, next: NextFunction) =>
-    Promise.resolve(fn(req, res, next)).catch(next);
-}
-
-
 export function validateBody<S extends ZodTypeAny>(schema: S) {
   return (
     req: Request<any, any, z.infer<S>>,

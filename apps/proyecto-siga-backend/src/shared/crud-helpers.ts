@@ -102,7 +102,7 @@ export async function handleUpdate<T>(
   req: AuthedRequest,
   res: Response,
   updateSchema: z.ZodSchema,
-  idParamSchema: z.ZodSchema = z.object({ id: z.string().uuid() }),
+  idParamSchema: z.ZodSchema = z.object({ id: z.uuid() }),
   options: {
     beforeUpdate?: (existingEntity: any, newData: any) => Promise<any> | any;
     afterUpdate?: (entity: any) => Promise<void> | void;
@@ -135,7 +135,7 @@ export async function handleDelete<T>(
   config: CrudConfig<T>,
   req: AuthedRequest,
   res: Response,
-  idParamSchema: z.ZodSchema = z.object({ id: z.string().uuid() }),
+  idParamSchema: z.ZodSchema = z.object({ id: z.uuid() }),
   options: {
     beforeDelete?: (entity: any) => Promise<void> | void;
     afterDelete?: (entity: any) => Promise<void> | void;
