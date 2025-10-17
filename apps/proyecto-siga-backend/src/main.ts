@@ -1,8 +1,9 @@
+import "reflect-metadata";
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import swaggerOutput from '../../../packages/docs/swagger-output.json';
 import { router } from './routes/routes';
-import { errorHandler } from './shared/error-handlers';
+import { errorHandler } from './shared/errorHandler';
 const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 6001;
 

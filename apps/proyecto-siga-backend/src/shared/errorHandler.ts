@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import z, { ZodError, ZodTypeAny } from "zod";
+import  { ZodError } from "zod";
 import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
 } from "@prisma/client/runtime/library";
 import { HttpError, ErrorCode } from "../utils/httpError";
 
-export function handlePrismaError(error: any): HttpError {
+function handlePrismaError(error: any): HttpError {
   if (error instanceof PrismaClientKnownRequestError) {
     switch (error.code) {
       case "P2002":
@@ -56,7 +56,7 @@ export function handlePrismaError(error: any): HttpError {
   throw error;
 }
 
-export function handleZodError(error: ZodError): HttpError {
+function handleZodError(error: ZodError): HttpError {
   const errors = error.issues.map((err) => ({
     field: err.path.join("."),
     message: err.message,
@@ -106,52 +106,4 @@ export function errorHandler(
     code: handledError.code,
     ...(handledError.details && { details: handledError.details }),
   });
-}
-
-export function validateBody<S extends ZodTypeAny>(schema: S) {
-  return (
-    req: Request<any, any, z.infer<S>>,
-    _res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const parsed = schema.parse(req.body);
-      req.body = parsed as z.infer<S>;
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-export function validateQuery<S extends ZodTypeAny>(schema: S) {
-  return (
-    req: Request<any, any, any, z.infer<S>>,
-    _res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const parsed = schema.parse(req.query);
-      req.query = parsed as unknown as z.infer<S>; 
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-export function validateParams<S extends ZodTypeAny>(schema: S) {
-  return (
-    req: Request<z.infer<S>>,
-    _res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const parsed = schema.parse(req.params);
-      req.params = parsed as unknown as z.infer<S>;
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
 }

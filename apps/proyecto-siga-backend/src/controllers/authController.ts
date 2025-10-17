@@ -1,17 +1,19 @@
 import { Router } from "express";
 import { z } from "zod";
-import bcrypt from "bcrypt";
-import prisma from "@packages/libs/prisma";
 import { auth, AuthedRequest } from "../middleware/auth";
+import container from '../container/index'
+import { IAuthService } from "../contracts/auth/IauthService";
+import { TokenService } from "../services/auth/tokenService";
 import { wrap } from "../middleware/async";
 import { Unauthorized } from "../utils/httpError";
-import { tokenService } from "../security/TokenService";
-import { checkPassword } from "../security/passwordPolicy";
 import { verifyRefreshToken } from "../utils/jwt";
-import { ok } from "../utils/jsonResponse";
+import {ok} from "../utils/jsonResponse";
+
 export const AuthController = Router();
 
-// Validation schemas
+const authService = container.resolve<IAuthService>("AuthService");
+const tokenService = container.resolve<TokenService>("TokenService");
+
 const LoginDto = z.object({
   email: z
     .string()
@@ -36,58 +38,6 @@ const ChangePasswordDto = z.object({
     .min(6, "La nueva contraseña debe tener al menos 6 caracteres"),
 });
 
-const validateUserCredentials = async (email: string, password: string) => {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    throw Unauthorized("Credenciales inválidas");
-  }
-
-  // const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-  // if (!isValidPassword) {
-  //   throw Unauthorized("Credenciales inválidas");
-  // }
-
-  return user;
-};
-
-const createUserResponse = (user: any) => ({
-  id: user.id,
-  email: user.email,
-  role: user.role,
-  name: user.name,
-});
-
-const validateCurrentPassword = async (
-  userId: string,
-  currentPassword: string
-) => {
-  const user = await prisma.user.findUnique({ where: { userId: userId } });
-  if (!user) {
-    throw Unauthorized("Usuario no encontrado");
-  }
-
-  const isValidPassword = await bcrypt.compare(
-    currentPassword,
-    user.password
-  );
-
-  if (!isValidPassword) {
-    throw Unauthorized("Contraseña actual incorrecta");
-  }
-  return user;
-};
-
-const validateAndHashNewPassword = async (
-  newPassword: string,
-  email: string
-) => {
-  const passwordErrors = await checkPassword(newPassword, email);
-  if (passwordErrors.length > 0) {
-    throw { status: 400, message: passwordErrors.join(". ") };
-  }
-  const saltRounds = 12; // Could be from env var
-  return bcrypt.hash(newPassword, saltRounds);
-};
 
 const parseRefreshToken = (refreshToken: string) => {
   const parts = refreshToken.split(".");
@@ -103,18 +53,29 @@ AuthController.post(
   wrap(async (req, res) => {
     const { email, password } = LoginDto.parse(req.body);
 
-    const user = await validateUserCredentials(email, password);
+    // Login through service
+    const result = await authService.login(email, password);
 
-    const tokenPair = await tokenService.issuePair(
-      user.userId,
+    // Generate token pair
+    const tokens = await tokenService.issuePair(
+      result.user.userId,
       req.headers["user-agent"] as string,
       req.ip
     );
 
-    ok(res, {
-      accessToken: tokenPair.accessToken,
-      refreshToken: tokenPair.refreshToken,
-      user: createUserResponse(user),
+    ok(res,{
+      data: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: {
+          id: result.user.userId,
+          userNumber: result.user.userNumber,
+          email: result.user.email,
+          gender: result.user.gender,
+          role: result.user.role,
+          name: result.user.name,
+        },
+      },
     });
   })
 );
@@ -130,9 +91,11 @@ AuthController.post(
       req.ip
     );
 
-    ok(res, {
-      accessToken: tokenPair.accessToken,
-      refreshToken: tokenPair.refreshToken,
+    ok(res,{
+      data: {
+        accessToken: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+      },
     });
   })
 );
@@ -145,7 +108,6 @@ AuthController.post(
     const validRefreshToken = parseRefreshToken(refreshToken);
 
     const payload = verifyRefreshToken(validRefreshToken);
-    
     if (!payload) {
       throw Unauthorized("Refresh token inválido");
     }
@@ -155,7 +117,11 @@ AuthController.post(
 
     await tokenService.revoke(payload.jti);
 
-    return ok(res, null, "Logout exitoso");
+    ok(res,{
+      data: {
+        message: "Logout exitoso",
+      },
+    });
   })
 );
 
@@ -164,7 +130,12 @@ AuthController.post(
   auth,
   wrap(async (req: AuthedRequest, res) => {
     await tokenService.revokeAllForUser(req.user!.id);
-    return ok(res, null, "Logout exitoso");
+
+    ok(res,{
+      data: {
+        message: "Logout exitoso",
+      },
+    });
   })
 );
 
@@ -172,23 +143,15 @@ AuthController.get(
   "/me",
   auth,
   wrap(async (req: AuthedRequest, res) => {
-    const user = await prisma.user.findUnique({
-      where: { userId: req.user!.id },
-      select: {
-        userId: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-        tokenVersion: true,
-      },
-    });
+    const userProfile = await authService.getUserProfile(req.user!.id);
 
-    if (!user) {
+    if (!userProfile) {
       throw Unauthorized("Usuario no encontrado");
     }
-    ok(res, user); 
-})
+    ok(res,{
+      data: userProfile
+    });
+  })
 );
 
 AuthController.put(
@@ -196,21 +159,20 @@ AuthController.put(
   auth,
   wrap(async (req: AuthedRequest, res) => {
     const { currentPassword, newPassword } = ChangePasswordDto.parse(req.body);
-    const user = await validateCurrentPassword(req.user!.id, currentPassword);
-    const newPasswordHash = await validateAndHashNewPassword(
-      newPassword,
-      user.email
+
+    // Change password through service (includes all validations)
+    await authService.changePassword(
+      req.user!.id,
+      currentPassword,
+      newPassword
     );
 
-    await prisma.user.update({
-      where: { userId : user.userId },
+    ok(res,{
       data: {
-        password: newPasswordHash,
-        tokenVersion: { increment: 1 },
-      },
+        message: "Contraseña cambiada exitosamente"
+      }
     });
-
-    await tokenService.revokeAllForUser(user.userId);
-    ok(res, null, "Contraseña cambiada con éxito");
   })
 );
+
+export default AuthController;

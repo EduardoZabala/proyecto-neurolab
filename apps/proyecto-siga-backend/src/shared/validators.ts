@@ -9,15 +9,10 @@ export const CommonValidators = {
   name: z.string().min(1).trim(),
   alias: z.string().trim().optional().nullable(),
   description: z.string().trim().optional().nullable(),
-  
 
   email: z.string().min(3).trim().transform((s) => s.toLowerCase()),
   password: z.string().min(1),
-  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'INSTALLER']),
-  
-
-  siteId: z.string().uuid().optional(),
-  roomId: z.string().uuid().optional(),
+  role: z.enum(['admin', 'user', 'psychologist']),
   
  
   pagination: z.object({
@@ -33,17 +28,14 @@ export const CommonDtos = {
     id: CommonValidators.id
   }),
   
-
-  SiteQuery: z.object({
-    siteId: CommonValidators.siteId
+  UserIdParam: z.object({
+    userId: CommonValidators.id
   }),
-  
 
   PaginatedQuery: z.object({
     limit: z.coerce.number().int().min(1).max(1000).default(100),
     offset: z.coerce.number().int().min(0).default(0)
-  }),
-  
+  }),  
 
   BaseEntity: z.object({
     name: CommonValidators.name,
