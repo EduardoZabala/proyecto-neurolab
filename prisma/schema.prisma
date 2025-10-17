@@ -35,7 +35,7 @@ model user {
   email        String   @unique
   password     String
   name         String
-  gender       String?
+  gender       String? 
   tokenVersion Int      @default(0)
   role         userRole
   isActive     Boolean  @default(false)

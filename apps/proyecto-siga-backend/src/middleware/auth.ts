@@ -44,7 +44,7 @@ export async function auth(req: AuthedRequest, res: Response, next: NextFunction
       select: { tokenVersion: true },
     })
 
-    if (!user || user.tokenVersion !== payload.tver) {
+    if (!user || user.tokenVersion !== payload.tokenVersion) {
       return next(Unauthorized('Token inválido (version)'))
     }
     next()

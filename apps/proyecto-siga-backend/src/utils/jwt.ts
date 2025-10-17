@@ -4,8 +4,8 @@ export type JwtPayloadBase = {
   sub: string
   role: string
   email: string
-  tver: number  
-  jti?: string  
+  tokenVersion: number
+  jti?: string
 }
 
 const signToken = (

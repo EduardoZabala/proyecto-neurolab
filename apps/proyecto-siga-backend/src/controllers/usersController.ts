@@ -1,168 +1,214 @@
+import { auth, asAdminOrPsychologist } from "../middleware/auth";
+import container from "../container/index";
+import { CommonDtos } from "../shared/validators";
 import { Router } from "express";
-import bcrypt from "bcrypt";
-import { z } from "zod";
-import prisma from "@packages/libs/prisma";
-import { auth, asAdminOrPsychologist, AuthedRequest } from "../middleware/auth";
 import { wrap } from "../middleware/async";
 import { ok } from "../utils/jsonResponse";
-import { checkPassword } from "../security/passwordPolicy";
-import {
-  handleList,
-  handleGetById,
-  handleCreate,
-  handleUpdate,
-  findEntityById,
-} from "../shared/crud-helpers";
-// import { CommonDtos } from "../shared/validators";
-import { ValidationError } from "../utils/httpError";
+import { IUserService } from "../contracts/user/IuserService";
+import { z } from "zod";
+import { NotFound } from "../utils/httpError";
+import { created } from "../utils/jsonResponse";
 
+// Private Routes
 export const UsersController = Router();
+const userService = container.resolve<IUserService>("UserService");
 
-// Apply auth middleware to all routes
 UsersController.use(auth, asAdminOrPsychologist);
-
 const roles = ["admin", "psychologist", "user"] as const;
 
-// Validation schemas
+interface userResponse {
+  userId: string;
+  userNumber: string;
+  email: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+}
+
 const CreateUserDto = z.object({
-  email: z
-    .string()
-    .min(3)
-    .trim()
-    .transform((s) => s.toLowerCase()),
-  name: z.string().trim().optional().nullable(),
-  password: z.string().min(1),
-  role: z.enum(roles),
-});
-
-const UpdateUserDto = z.object({
-  email: z
-    .string()
-    .min(3)
-    .trim()
-    .transform((s) => s.toLowerCase()),
+  email: z.string().min(3).trim().transform((s) => s.toLowerCase()),
   name: z.string().trim().optional().nullable(),
   role: z.enum(roles),
-});
+  userNumber: z.string().min(1).trim(),
+})
 
-// Select fields for user responses
-const selectFields = {
-  userId: true,
-  email: true,
-  name: true,
-  role: true,
-  isActive: true,
-  createdAt: true
-};
 
-// CRUD configuration
-const userConfig = {
-  model: prisma.user,
-  entityName: "user",
-  selectFields,
-};
+// CRUD Routes using service
 
-// Custom password validation and hashing functions
-const validateAndHashPassword = async (password: string, email: string) => {
-  const pwErrors = await checkPassword(password, email);
-  if (pwErrors.length) {
-    throw ValidationError("La contraseña debe tener minimo 6 caracteres", {details:pwErrors});
-  }
-
-  const rounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
-  const saltRounds = Number.isFinite(rounds) && rounds > 0 ? rounds : 10;
-  return bcrypt.hash(password, saltRounds);
-};
-
-// get users
 UsersController.get(
   "/",
-  wrap(async (req, res) => {
-    return handleList(userConfig, req, res, {
-      orderBy: { createdAt: "desc" },
-    });
+  auth,
+  asAdminOrPsychologist,
+  wrap(async (req: any, res) => {
+    const users = await userService.getUsers();
+    return ok(res, users, "Listado de usuarios");
   })
 );
-// create a new user
+
+UsersController.get(
+  "/:id",
+  auth,
+  asAdminOrPsychologist,
+  wrap(async (req: any, res) => {
+    const { id } = CommonDtos.IdParam.parse(req.params);
+    const user = await userService.getUserById(id);
+    if (!user) {
+      throw NotFound("Usuario no encontrado");
+    }
+    const userResponse: userResponse = {
+      userId: user.userId,
+      userNumber: user.userNumber,
+      email: user.email,
+      name: user.name || "",
+      role: user.role,
+      isActive: user.isActive
+    };
+    return ok(res, userResponse, "Detalle de usuario");
+  })
+);
+
 UsersController.post(
   "/",
-  wrap(async (req: AuthedRequest, res) => {
-    return handleCreate(userConfig, req, res, CreateUserDto, {
-      beforeCreate: async (data) => {
-        const passwordHash = await validateAndHashPassword(
-          data.password,
-          data.email
-        );
-        const { password, ...createData } = data;
-        return { ...createData, passwordHash };
-      },
+  auth,
+  asAdminOrPsychologist,
+  wrap(async (req: any, res) => {
+    const input = CreateUserDto.parse(req.body);
+    const user = await userService.createUser({
+      email: input.email,
+      name: input.name ?? "",
+      userNumber: input.userNumber,
+      role: input.role,
     });
-  })
-);
-// get user by id
-UsersController.get(
-  "/:id",
-  wrap(async (req, res) => {
-    return handleGetById(userConfig, req, res);
+    const userReponse: userResponse = {
+      userId: user.userId,
+      userNumber: user.userNumber,
+      email: user.email,
+      name: user.name || "",
+      role: user.role,
+      isActive: user.isActive
+    };
+    return created(
+      res,
+      userReponse,
+      "Usuario creado con éxito. Se ha enviado un email de verificación."
+    );
   })
 );
 
-// update user by id
-UsersController.put(
-  "/:id",
-  wrap(async (req: AuthedRequest, res) => {
-    return handleUpdate(userConfig, req, res, UpdateUserDto);
-  })
-);
 
 UsersController.patch(
   "/:id/deactivate",
-  wrap(async (req, res) => {
-    const { id } = req.params;
-
-    const user = (await findEntityById(userConfig, id)) as any;
-
-    if (!user.isActive) {
-      throw ValidationError("El usuario ya está desactivado");
-    }
-
-    await prisma.$transaction(async (tx) => {
-
-      await tx.user.update({
-        where: { userId: id },
-        data: {
-          isActive: false,
-        },
-      });
-      await tx.refreshToken.updateMany({
-        where: { 
-          userId: id,
-          revokedAt: null, 
-        },
-        data: { revokedAt: new Date() },
-      });
-    });
-
+  auth,
+  asAdminOrPsychologist,
+  wrap(async (req: any, res) => {
+    const { id } = CommonDtos.IdParam.parse(req.params);
+    await userService.deactivateUser(id);
     return ok(res, null, "Usuario desactivado con éxito");
   })
 );
 
 UsersController.patch(
   "/:id/activate",
-  wrap(async (req, res) => {
-    const { id } = req.params;
-
-    const user = (await findEntityById(userConfig, id)) as any;
-
-    if (user.isActive) {
-      return ValidationError("El usuario ya está activo");
-    }
-
-    await prisma.user.update({
-      where: { userId: id },
-      data: { isActive: true },
-    });
-
+  auth,
+  asAdminOrPsychologist,
+  wrap(async (req: any, res) => {
+    const { id } = CommonDtos.IdParam.parse(req.params);
+    await userService.activateUser(id);
     return ok(res, null, "Usuario activado con éxito");
   })
 );
+
+// Nueva ruta para verificar disponibilidad de email
+
+UsersController.get(
+  "/check-email/:email",
+  wrap(async (req: any, res) => {
+    const email = z.string().parse(req.params.email);
+    const { excludeId } = z
+      .object({ excludeId: z.string().optional() })
+      .parse(req.query);
+
+    const isAvailable = await userService.checkEmailAvailable(email, excludeId);
+    return ok(
+      res,
+      { available: isAvailable, email },
+      "Verificación de disponibilidad de email"
+    );
+  })
+);
+
+// Routes public
+
+const PublicUsersController = Router();
+
+// PublicUsersController.post(
+//   "/verify-email",
+//   wrap(async (req: any, res) => {
+//     const { token } = z.object({ token: z.string() }).parse(req.body);
+//     await userService.verifyEmail(token);
+//     return ok(
+//       res,
+//       null,
+//       "Email verificado exitosamente. Tu cuenta ha sido activada."
+//     );
+//   })
+// );
+
+// PublicUsersController.post(
+//   "/request-password-reset",
+//   wrap(async (req: any, res) => {
+//     const { email } = z.object({ email: z.string() }).parse(req.body);
+
+//     await userService.requestPasswordReset(email);
+//     return ok(
+//       res,
+//       null,
+//       "Si el email existe, recibirás instrucciones para restablecer tu contraseña."
+//     );
+//   })
+// );
+
+// PublicUsersController.post(
+//   "/reset-password",
+//   wrap(async (req: any, res) => {
+//     const { token, password } = z
+//       .object({
+//         token: z.string(),
+//         password: z
+//           .string()
+//           .min(6, "La contraseña debe tener al menos 6 caracteres")
+//           .regex(
+//             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+//             "La contraseña debe contener al menos: 1 minúscula, 1 mayúscula y 1 número"
+//           ),
+//       })
+//       .parse(req.body);
+
+//     await userService.resetPassword(token, password);
+//     return ok(res, null, "Contraseña restablecida exitosamente.");
+//   })
+// );
+
+// PublicUsersController.post(
+//   "/resend-activation",
+//   wrap(async (req: any, res) => {
+//     const { email } = z.object({ email: z.string() }).parse(req.body);
+//     await userService.resendActivation(email);
+//     return ok(
+//       res,
+//       null,
+//       "Si el email corresponde a una cuenta no activada, recibirás un nuevo email de activación."
+//     );
+//   })
+// );
+
+PublicUsersController.post(
+  "/check-unverified",
+  wrap(async (req: any, res) => {
+    const { email } = z.object({ email: z.string() }).parse(req.body);
+    const isUnverified = await userService.checkUnverifiedAccount(email);
+    return ok(res, { isUnverified }, "Verificación de cuenta");
+  })
+);
+
+export { PublicUsersController };
