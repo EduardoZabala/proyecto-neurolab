@@ -14,22 +14,23 @@ export const UsersController = Router();
 const userService = container.resolve<IUserService>("UserService");
 
 UsersController.use(auth, asAdminOrPsychologist);
-const roles = ["admin", "psychologist", "user"] as const;
-
+const role = ["user"] as const
+// const rolesAdmin = [..,admin, "psychologist", "user"] as const; // not implemented yet 
 interface userResponse {
-  userId: string;
   userNumber: string;
   email: string;
   name: string;
   role: string;
   isActive: boolean;
+  gender: string;
 }
 
 const CreateUserDto = z.object({
   email: z.string().min(3).trim().transform((s) => s.toLowerCase()),
   name: z.string().trim().optional().nullable(),
-  role: z.enum(roles),
+  role: z.enum(role),
   userNumber: z.string().min(1).trim(),
+  gender:z.string()
 })
 
 const userTypes = ["itmStudent", "itmEmployee", "external"] as const;
@@ -67,12 +68,12 @@ UsersController.get(
       throw NotFound("Usuario no encontrado");
     }
     const userResponse: userResponse = {
-      userId: user.userId,
       userNumber: user.userNumber,
       email: user.email,
       name: user.name || "",
       role: user.role,
-      isActive: user.isActive
+      isActive: user.isActive,
+      gender: user.gender ?? ""
     };
     return ok(res, userResponse, "Detalle de usuario");
   })
@@ -92,12 +93,12 @@ UsersController.post(
       userType: 'external',
     });
     const userReponse: userResponse = {
-      userId: user.userId,
       userNumber: user.userNumber,
       email: user.email,
       name: user.name || "",
       role: user.role,
-      isActive: user.isActive
+      isActive: user.isActive,
+      gender: user.gender ?? ""
     };
     return created(
       res,
@@ -153,18 +154,40 @@ UsersController.get(
 
 const PublicUsersController = Router();
 
-// PublicUsersController.post(
-//   "/verify-email",
-//   wrap(async (req: any, res) => {
-//     const { token } = z.object({ token: z.string() }).parse(req.body);
-//     await userService.verifyEmail(token);
-//     return ok(
-//       res,
-//       null,
-//       "Email verificado exitosamente. Tu cuenta ha sido activada."
-//     );
-//   })
-// );
+PublicUsersController.post(
+  "/register",
+  wrap(async (req: any, res) => {
+    const input = RegisterDto.parse(req.body);
+    const user = await userService.createUser({
+      email: input.email,
+      name: input.name,
+      userNumber: input.userNumber,
+      userType: input.userType,
+      birthDate: input.birthDate,
+      gender: input.gender,
+      role: 'user',
+    });
+    return created(
+      res,
+      { userId: user.userId, email: user.email },
+      "Usuario registrado con éxito. Se ha enviado un email de verificación."
+    );
+  })
+);
+
+PublicUsersController.post(
+  "/verify-email",
+  wrap(async (req: any, res) => {
+    const { token } = z.object({ token: z.string() }).parse(req.body);
+    console.log(token);
+    // await userService.verifyEmail(token);
+    return ok(
+      res,
+      null,
+      "Email verificado exitosamente. Tu cuenta ha sido activada."
+    );
+  })
+);
 
 // PublicUsersController.post(
 //   "/request-password-reset",

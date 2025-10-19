@@ -3,8 +3,7 @@ import { useState } from 'react';
 type UserType = 'itmStudent' | 'itmEmployee' | 'external';
 
 export default function RegisterPage() {
-  const [step, setStep] = useState(1);
-  const [userType, setUserType] = useState<UserType | null>(null);
+  const [userType, setUserType] = useState<UserType>('external');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,10 +14,7 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
 
-  const handleUserTypeSelect = (type: UserType) => {
-    setUserType(type);
-    setStep(2);
-  };
+
 
   const validateEmail = (email: string, type: UserType | null) => {
     if (!type) return '';
@@ -100,93 +96,29 @@ export default function RegisterPage() {
                 Revisa tu bandeja de entrada y activa tu cuenta.
               </p>
             </div>
-          ) : step === 1 ? (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-semibold text-[#102D69] mb-6 text-center">
-                ¿Cuál es tu relación con el ITM?
-              </h2>
-              
-              <button
-                type="button"
-                onClick={() => handleUserTypeSelect('itmStudent')}
-                className="w-full group relative overflow-hidden bg-gradient-to-r from-[#102D69] to-[#00A0B7] text-white py-6 px-6 rounded-xl font-semibold hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-lg font-bold">Estudiante ITM</div>
-                      <div className="text-sm text-blue-100">@correo.itm.edu.co</div>
-                    </div>
-                  </div>
-                  <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleUserTypeSelect('itmEmployee')}
-                className="w-full group relative overflow-hidden bg-gradient-to-r from-[#00A0B7] to-[#56ACDE] text-white py-6 px-6 rounded-xl font-semibold hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-lg font-bold">Empleado ITM</div>
-                      <div className="text-sm text-blue-100">@itm.edu.co</div>
-                    </div>
-                  </div>
-                  <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleUserTypeSelect('external')}
-                className="w-full group relative overflow-hidden bg-gradient-to-r from-[#56ACDE] to-[#102D69] text-white py-6 px-6 rounded-xl font-semibold hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-lg font-bold">Usuario Externo</div>
-                      <div className="text-sm text-blue-100">Cualquier dominio</div>
-                    </div>
-                  </div>
-                  <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </button>
-            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
-              <button
-                type="button"
-                onClick={() => { setStep(1); setUserType(null); }}
-                className="flex items-center text-[#00A0B7] hover:text-[#102D69] font-medium mb-4 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Cambiar tipo de usuario
-              </button>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tipo de usuario *
+                </label>
+                <select
+                  value={userType}
+                  onChange={(e) => setUserType(e.target.value as UserType)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A0B7] focus:border-[#00A0B7] transition-all appearance-none bg-white cursor-pointer text-gray-700 font-medium"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300A0B7'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1.5rem',
+                    paddingRight: '3rem'
+                  }}
+                >
+                  <option value="itmStudent">Estudiante ITM (@correo.itm.edu.co)</option>
+                  <option value="itmEmployee">Empleado ITM (@itm.edu.co)</option>
+                  <option value="external">Usuario Externo</option>
+                </select>
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -254,7 +186,14 @@ export default function RegisterPage() {
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A0B7] focus:border-[#00A0B7] transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A0B7] focus:border-[#00A0B7] transition-all appearance-none bg-white cursor-pointer text-gray-700 font-medium"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300A0B7'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1.5rem',
+                    paddingRight: '3rem'
+                  }}
                 >
                   <option value="">Seleccionar</option>
                   <option value="M">Masculino</option>

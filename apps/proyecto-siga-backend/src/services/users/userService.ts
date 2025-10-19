@@ -9,16 +9,17 @@ import {
 import prisma from "@packages/libs/prisma";
 import { BadRequest, NotFound } from "../../utils/httpError";
 import { checkPassword } from "../../security/passwordPolicy";
-import type { IEmailService } from '../../contracts/mail/IemailService'
-import type { IVerificationService } from "../../contracts/mail/IverificationService";
-import type { IUserRepo } from "../../contracts/user/IuserRepo";
-import type { IRefreshTokenRepo } from "../../contracts/auth/IrefreshTokenRepo";
-import type { IEmailVerificationTokenRepo } from "../../contracts/mail/IemailVerificationTokenRepo";
+import { IEmailVerificationService } from "../../contracts/mail/IemailVerificationService";
+import { IVerificationService } from "../../contracts/mail/IverificationService";
+import { IUserRepo } from "../../contracts/user/IuserRepo";
+import { IRefreshTokenRepo } from "../../contracts/auth/IrefreshTokenRepo";
+import { IEmailVerificationTokenRepo } from "../../contracts/mail/IemailVerificationTokenRepo";
 
 @injectable()
 export class UserService implements IUserService {
   constructor(
-    @inject("EmailService") private readonly emailService: IEmailService,
+    @inject("EmailVerificationService")
+    private readonly emailVerificationService: IEmailVerificationService,
     @inject("VerificationService")
     private readonly verificationService: IVerificationService,
     @inject("UserRepo") private readonly userRepo: IUserRepo,
@@ -31,14 +32,12 @@ export class UserService implements IUserService {
   ) {}
 
   private async validateAndHashPassword(
-    password: string,
-    email: string
+    password: string
   ): Promise<string> {
-    const pwErrors = await checkPassword(password, email);
+    const pwErrors = await checkPassword(password);
     if (pwErrors.length) {
       throw BadRequest("Contraseña insegura", { details: pwErrors });
     }
-
     const rounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
     const saltRounds = Number.isFinite(rounds) && rounds > 0 ? rounds : 10;
     return bcrypt.hash(password, saltRounds);
@@ -70,20 +69,22 @@ export class UserService implements IUserService {
       }
 
       const email = input.email.toLowerCase();
-      if (input.userType === 'itmStudent' && !email.endsWith('@correo.itm.edu.co')) {
-        throw BadRequest("Los estudiantes deben usar correo @correo.itm.edu.co");
+      if (
+        input.userType === "itmStudent" &&
+        !email.endsWith("@correo.itm.edu.co")
+      ) {
+        throw BadRequest(
+          "Los estudiantes deben usar correo @correo.itm.edu.co"
+        );
       }
-      if (input.userType === 'itmEmployee' && !email.endsWith('@itm.edu.co')) {
+      if (input.userType === "itmEmployee" && !email.endsWith("@itm.edu.co")) {
         throw BadRequest("Los empleados deben usar correo @itm.edu.co");
       }
 
-
-
-            const temporaryPassword =
+      const temporaryPassword =
         this.verificationService.generateSecurePassword();
       const password = await this.validateAndHashPassword(
-        temporaryPassword,
-        input.email
+        temporaryPassword
       );
 
       const user = await this.userRepo.create(
@@ -94,21 +95,20 @@ export class UserService implements IUserService {
           role: input.role,
           userType: input.userType,
           gender: input.gender,
-           birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
+          birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
           password,
           isActive: false,
         },
         tx
       );
 
-
-
       const verificationToken = jwt.sign(
         { userId: user.userId, type: "email_verification" },
         process.env.JWT_SECRET!,
         { expiresIn: "24h" }
       );
-
+      
+      //Mover a redis
       await this.emailVerificationTokenRepo.create(
         {
           token: verificationToken,
@@ -118,12 +118,12 @@ export class UserService implements IUserService {
         tx
       );
 
-      await this.emailService.sendVerificationEmail({
-        email: user.email,
-        name: user.name || "Usuario",
+      await this.emailVerificationService.sendVerificationEmail(
+        user.email,
+        user.name || "Usuario",
         temporaryPassword,
-        verificationToken,
-      });
+        verificationToken
+      );
 
       return user as User;
     });
