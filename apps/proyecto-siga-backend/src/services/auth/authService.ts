@@ -27,6 +27,7 @@ export class AuthService implements IAuthService {
         email: user.email,
         name: user.name || "",
         role: user.role,
+        userType: user.userType,
         gender: user.gender || "",
         isActive: user.isActive,
       },
@@ -60,6 +61,7 @@ export class AuthService implements IAuthService {
       email: user.email,
       name: user.name || "",
       role: user.role,
+      userType: user.userType,
       isActive: user.isActive,
     };
   }
