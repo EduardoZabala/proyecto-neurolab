@@ -52,3 +52,4 @@ prisma/migrations/
 out
 
 generated/
+apps/proyecto-siga-frontend/.env.local

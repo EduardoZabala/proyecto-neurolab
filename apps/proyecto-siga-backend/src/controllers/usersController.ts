@@ -32,6 +32,17 @@ const CreateUserDto = z.object({
   userNumber: z.string().min(1).trim(),
 })
 
+const userTypes = ["itmStudent", "itmEmployee", "external"] as const;
+
+const RegisterDto = z.object({
+  email: z.string().min(3).trim().transform((s) => s.toLowerCase()),
+  name: z.string().min(1).trim(),
+  userNumber: z.string().min(1).trim(),
+  userType: z.enum(userTypes),
+  birthDate: z.string().optional(),
+  gender: z.string().optional(),
+})
+
 
 // CRUD Routes using service
 
@@ -202,6 +213,27 @@ const PublicUsersController = Router();
 //     );
 //   })
 // );
+
+PublicUsersController.post(
+  "/register",
+  wrap(async (req: any, res) => {
+    const input = RegisterDto.parse(req.body);
+    const user = await userService.createUser({
+      email: input.email,
+      name: input.name,
+      userNumber: input.userNumber,
+      userType: input.userType,
+      birthDate: input.birthDate,
+      gender: input.gender,
+      role: 'user',
+    });
+    return created(
+      res,
+      { userId: user.userId, email: user.email },
+      "Usuario registrado con éxito. Se ha enviado un email de verificación."
+    );
+  })
+);
 
 PublicUsersController.post(
   "/check-unverified",

@@ -112,7 +112,7 @@ export class UserService implements IUserService {
       await this.emailVerificationTokenRepo.create(
         {
           token: verificationToken,
-          user: { connect: { id: user.userId } },
+          user: { connect: { userId: user.userId } },
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
         tx
