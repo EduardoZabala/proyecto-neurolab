@@ -20,12 +20,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.16.3
- * Query Engine version: bb420e667c1820a8c05a38023385f6cc7ef8e83a
+ * Prisma Client JS version: 6.17.1
+ * Query Engine version: 272a37d34178c2894197e17273bf937f25acdeac
  */
 Prisma.prismaVersion = {
-  client: "6.16.3",
-  engine: "bb420e667c1820a8c05a38023385f6cc7ef8e83a"
+  client: "6.17.1",
+  engine: "272a37d34178c2894197e17273bf937f25acdeac"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -127,9 +127,12 @@ exports.Prisma.UserScalarFieldEnum = {
   password: 'password',
   name: 'name',
   gender: 'gender',
+  birthDate: 'birthDate',
+  userType: 'userType',
   tokenVersion: 'tokenVersion',
   role: 'role',
   isActive: 'isActive',
+  lastLogin: 'lastLogin',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -234,6 +237,12 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
+exports.userType = exports.$Enums.userType = {
+  itm_student: 'itm_student',
+  itm_employee: 'itm_employee',
+  external: 'external'
+};
+
 exports.userRole = exports.$Enums.userRole = {
   admin: 'admin',
   psychologist: 'psychologist',

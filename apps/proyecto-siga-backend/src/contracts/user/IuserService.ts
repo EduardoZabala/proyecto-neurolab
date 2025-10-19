@@ -1,5 +1,6 @@
 
 export type UserRole = 'admin' | 'psychologist' | 'user'
+export type UserType = 'itmStudent' | 'itmEmployee' | 'external'
 
 export interface User {
   userId: string
@@ -7,7 +8,10 @@ export interface User {
   email: string
   name: string 
   role: UserRole
+  userType: UserType
   gender?: string | '' 
+  birthDate?: Date
+  lastLogin?: Date
   isActive: boolean
 }
 
@@ -16,7 +20,9 @@ export interface CreateUserInput {
   name?: string
   userNumber: string
   gender?: string | '' 
+  birthDate?: string
   role: UserRole
+  userType: UserType
 }
 
 export interface UpdateUserInput {

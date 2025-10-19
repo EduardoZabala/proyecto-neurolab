@@ -69,7 +69,17 @@ export class UserService implements IUserService {
         throw BadRequest("El email ya está registrado");
       }
 
-      const temporaryPassword =
+      const email = input.email.toLowerCase();
+      if (input.userType === 'itmStudent' && !email.endsWith('@correo.itm.edu.co')) {
+        throw BadRequest("Los estudiantes deben usar correo @correo.itm.edu.co");
+      }
+      if (input.userType === 'itmEmployee' && !email.endsWith('@itm.edu.co')) {
+        throw BadRequest("Los empleados deben usar correo @itm.edu.co");
+      }
+
+
+
+            const temporaryPassword =
         this.verificationService.generateSecurePassword();
       const password = await this.validateAndHashPassword(
         temporaryPassword,
@@ -82,12 +92,16 @@ export class UserService implements IUserService {
           email: input.email.toLowerCase(),
           name: input.name ?? "",
           role: input.role,
+          userType: input.userType,
           gender: input.gender,
+           birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
           password,
           isActive: false,
         },
         tx
       );
+
+
 
       const verificationToken = jwt.sign(
         { userId: user.userId, type: "email_verification" },

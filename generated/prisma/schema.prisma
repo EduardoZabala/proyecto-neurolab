@@ -14,6 +14,12 @@ enum userRole {
   user
 }
 
+enum userType {
+  itm_student
+  itm_employee
+  external
+}
+
 // enum questionType {
 //   single_choice
 //   multiple_choice
@@ -30,17 +36,20 @@ enum assignmentStatus {
 }
 
 model user {
-  userId       String   @id @default(uuid()) @db.Uuid
-  userNumber   String   @unique
-  email        String   @unique
+  userId       String    @id @default(uuid()) @db.Uuid
+  userNumber   String    @unique
+  email        String    @unique
   password     String
   name         String
-  gender       String
-  tokenVersion Int      @default(0)
+  gender       String?
+  birthDate    DateTime?
+  userType     userType  @default(external)
+  tokenVersion Int       @default(0)
   role         userRole
-  isActive     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean   @default(false)
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // relations
   refreshTokens refreshToken[]
