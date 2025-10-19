@@ -78,6 +78,7 @@ UsersController.post(
       name: input.name ?? "",
       userNumber: input.userNumber,
       role: input.role,
+      userType: 'external',
     });
     const userReponse: userResponse = {
       userId: user.userId,

@@ -50,3 +50,5 @@ prisma/migrations/
 # Next.js
 .next
 out
+
+generated/
