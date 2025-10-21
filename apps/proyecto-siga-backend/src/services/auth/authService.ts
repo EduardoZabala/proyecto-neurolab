@@ -15,9 +15,15 @@ import { User } from "../../contracts";
 @injectable()
 export class AuthService implements IAuthService {
   constructor(@inject("UserRepo") private readonly userRepo: IUserRepo) {}
-
+  private async HashPassword(password: string): Promise<string> {
+    const rounds = Number(process.env.BCRYPT_SALT_ROUNDS);
+    const saltRounds = Number.isFinite(rounds) && rounds > 0 ? rounds : 10;
+    return bcrypt.hash(password, saltRounds);
+  }
   async login(email: string, password: string): Promise<LoginResult> {
     const credentials: LoginCredentials = { email, password };
+
+    password = await this.HashPassword(password);
     const user = await this.validateCredentials(credentials);
     return {
       token: "",
@@ -30,6 +36,7 @@ export class AuthService implements IAuthService {
         userType: user.userType,
         gender: user.gender || "",
         isActive: user.isActive,
+        lastLogin: user.lastLogin 
       },
     };
   }
@@ -39,13 +46,6 @@ export class AuthService implements IAuthService {
 
     if (!user) {
       throw Unauthorized("Credenciales inválidas");
-    }
-
-    // Check if account is unverified (inactive)
-    if (!user.isActive) {
-      throw Unauthorized(
-        "Esta cuenta no está activada"
-      );
     }
     const isValidPassword = await bcrypt.compare(
       credentials.password,
@@ -63,6 +63,7 @@ export class AuthService implements IAuthService {
       role: user.role,
       userType: user.userType,
       isActive: user.isActive,
+      lastLogin: user.lastLogin || undefined
     };
   }
 
@@ -137,3 +138,5 @@ export class AuthService implements IAuthService {
     }
   }
 }
+//TODO:
+// evitar porque no hay logica para el last login y definir como se va a manejar cuando un usuario lo desactivan

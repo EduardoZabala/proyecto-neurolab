@@ -6,7 +6,6 @@ export const router = Router();
 // privates routes
 router.use('/users',UsersController);
 router.use('/auth',AuthController);
-router.use('/auth',PublicUsersController);
 
 // public routes
 router.use('/public/users', PublicUsersController)

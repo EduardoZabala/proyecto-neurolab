@@ -74,6 +74,8 @@ AuthController.post(
           gender: result.user.gender,
           role: result.user.role,
           name: result.user.name,
+          isActive: result.user.isActive,
+          lastLogin: result.user.lastLogin,
         },
       },
     });

@@ -8,7 +8,6 @@ import {
 } from "../../contracts/user/IuserService";
 import prisma from "@packages/libs/prisma";
 import { BadRequest, NotFound } from "../../utils/httpError";
-import { checkPassword } from "../../security/passwordPolicy";
 import { IEmailVerificationService } from "../../contracts/mail/IemailVerificationService";
 import { IVerificationService } from "../../contracts/mail/IverificationService";
 import { IUserRepo } from "../../contracts/user/IuserRepo";
@@ -31,13 +30,9 @@ export class UserService implements IUserService {
     private readonly refreshTokenRepo: IRefreshTokenRepo
   ) {}
 
-  private async validateAndHashPassword(
+  private async HashPassword(
     password: string
   ): Promise<string> {
-    const pwErrors = await checkPassword(password);
-    if (pwErrors.length) {
-      throw BadRequest("Contraseña insegura", { details: pwErrors });
-    }
     const rounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
     const saltRounds = Number.isFinite(rounds) && rounds > 0 ? rounds : 10;
     return bcrypt.hash(password, saltRounds);
@@ -83,10 +78,10 @@ export class UserService implements IUserService {
 
       const temporaryPassword =
         this.verificationService.generateSecurePassword();
-      const password = await this.validateAndHashPassword(
+      const password = await this.HashPassword(
         temporaryPassword
       );
-
+      console.log(`Temporary password: ${temporaryPassword}`); //Eliminar luego
       const user = await this.userRepo.create(
         {
           userNumber: input.userNumber,
@@ -97,7 +92,8 @@ export class UserService implements IUserService {
           gender: input.gender,
           birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
           password,
-          isActive: false,
+          isActive: true,
+          lastLogin: null,
         },
         tx
       );
