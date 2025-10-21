@@ -1,6 +1,6 @@
 export interface ITokenCacheRepo {
 
-    setAccessToken(userId: string, token: string, expiresIn: number): Promise<void>;
+  setAccessToken(userId: string, token: string, expiresIn: number): Promise<void>;
   getAccessToken(userId: string): Promise<string | null>;
   deleteAccessToken(userId: string): Promise<void>;
   
@@ -9,8 +9,8 @@ export interface ITokenCacheRepo {
   deleteRefreshToken(userId: string): Promise<void>;
   
   setVerificationToken(email: string, token: string, expiresIn: number): Promise<void>;
-  getVerificationToken(email: string): Promise<string | null>;
-  deleteVerificationToken(email: string): Promise<void>;
+  getVerificationToken(token: string): Promise<string | null>;
+  deleteVerificationToken(token: string): Promise<void>;
   
   clearUserTokens(userId: string): Promise<void>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,7 @@ type FormData = {
   userNumber: string;
   gender: string;
   birthDate: string;
+  password: string;
 };
 
 interface RegisterModalProps {
@@ -28,7 +29,7 @@ interface RegisterModalProps {
 }
 
 export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
-  const userType = useState<UserType>("external");
+  const [userType, setUserType] = useState<UserType>("external");
   const [userData, setUserData] = useState<FormData | null>(null);
   const [success, setSuccess] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -49,7 +50,7 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>();
-  
+
   useEffect(() => {
     if (success) {
       if (countdown === 0) {
@@ -79,7 +80,6 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
     },
   });
 
-  
   const onSubmit = async (data: FormData) => {
     signupMutation.mutate(data);
   };
@@ -268,6 +268,25 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  {/* Agregar que se pueda mostrar la contraseña */}
+                  <input
+                    type="password"
+                    {...register("password", {
+                      required: "Este campo es obligatorio",
+                    })}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A0B7] focus:border-[#00A0B7] transition-all"
+                    placeholder="********"
+                  />
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Fecha de nacimiento *
                   </label>
                   <input
@@ -283,32 +302,30 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
                     </p>
                   )}
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Género
+                  </label>
+                  <select
+                    {...register("gender", {
+                      required: "Este campo es obligatorio",
+                    })}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A0B7] focus:border-[#00A0B7] transition-all appearance-none bg-white cursor-pointer text-gray-700 font-medium"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300A0B7'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 1rem center",
+                      backgroundSize: "1.5rem",
+                      paddingRight: "3rem",
+                    }}
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                    <option value="O">Otro</option>
+                  </select>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Género
-                </label>
-                <select
-                  {...register("gender", {
-                    required: "Este campo es obligatorio",
-                  })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00A0B7] focus:border-[#00A0B7] transition-all appearance-none bg-white cursor-pointer text-gray-700 font-medium"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300A0B7'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 1rem center",
-                    backgroundSize: "1.5rem",
-                    paddingRight: "3rem",
-                  }}
-                >
-                  <option value="">Seleccionar</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Femenino</option>
-                  <option value="O">Otro</option>
-                </select>
-              </div>
-
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-4">
                 <div className="flex items-start space-x-3">
                   <svg

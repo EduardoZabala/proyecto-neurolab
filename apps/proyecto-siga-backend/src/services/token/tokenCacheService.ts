@@ -16,8 +16,7 @@ export class TokenCacheService implements ITokenCacheService {
     const expiresIn = 7 * 24 * 60 * 60; // 7 días
     await this.tokenCacheRepo.setRefreshToken(userId, token, expiresIn);
   }
-  
-  //este va a volar
+
   async storeVerificationToken(email: string, token: string): Promise<void> {
     const expiresIn = 24 * 60 * 60; // 24 horas
     await this.tokenCacheRepo.setVerificationToken(email, token, expiresIn);
@@ -34,16 +33,14 @@ export class TokenCacheService implements ITokenCacheService {
   }
 
   async validateVerificationToken(
-    email: string,
     token: string
-  ): Promise<boolean> {
-    const storedToken = await this.tokenCacheRepo.getVerificationToken(email);
-
-    if (!storedToken || storedToken !== token) {
-      return false;
+  ): Promise<{ valid: boolean; email: string }> {
+    const email = await this.tokenCacheRepo.getVerificationToken(token);
+    if (!email) {
+      return { valid: false, email: "" };
     }
-    await this.tokenCacheRepo.deleteVerificationToken(email);
-    return true;
+    await this.tokenCacheRepo.deleteVerificationToken(token);
+    return { valid: true, email };
   }
 
   async getAccessToken(userId: string): Promise<string | null> {

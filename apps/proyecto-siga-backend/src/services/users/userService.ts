@@ -1,6 +1,5 @@
 import { inject, injectable } from "tsyringe";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import {
   IUserService,
   User,
@@ -10,10 +9,8 @@ import { generateSecurePassword } from "../../utils/sendEmail";
 import prisma from "@packages/libs/prisma";
 import { BadRequest, NotFound } from "../../utils/httpError";
 import { IEmailVerificationService } from "../../contracts/mail/IemailVerificationService";
-// import { IVerificationService } from "../../contracts/mail/IverificationService";
 import { IUserRepo } from "../../contracts/user/IuserRepo";
-import { IRefreshTokenRepo } from "../../contracts/auth/IrefreshTokenRepo";
-// import { IEmailVerificationTokenRepo } from "../../contracts/mail/IemailVerificationTokenRepo";
+import { IVerificationService } from "../../contracts/verification/IverificationService";
 
 @injectable()
 export class UserService implements IUserService {
@@ -22,10 +19,10 @@ export class UserService implements IUserService {
     private readonly emailVerificationService: IEmailVerificationService,
     @inject("UserRepo")
     private readonly userRepo: IUserRepo,
+    @inject("VerificationService")
+    private readonly verificationService: IVerificationService,
     // @inject("PasswordResetTokenRepo")
     // private readonly passwordResetTokenRepo: IPasswordResetTokenRepo,
-    @inject("RefreshTokenRepo")
-    private readonly refreshTokenRepo: IRefreshTokenRepo
   ) {}
 
   private async HashPassword(password: string): Promise<string> {
@@ -72,10 +69,16 @@ export class UserService implements IUserService {
       if (input.userType === "itmEmployee" && !email.endsWith("@itm.edu.co")) {
         throw BadRequest("Los empleados deben usar correo @itm.edu.co");
       }
+      let hashedPassword:string;
 
-      const temporaryPassword = await generateSecurePassword();
-      const password = await this.HashPassword(temporaryPassword);
-      console.log(`Temporary password: ${temporaryPassword}`); //Eliminar luego
+      if (input.password === "" || !input.password) { // genera password temporales
+        const temporaryPassword = await generateSecurePassword();
+        hashedPassword = await this.HashPassword(temporaryPassword);
+        console.log(`Temporary password: ${temporaryPassword}`); //Solo para testeo
+      }else {
+        hashedPassword = await this.HashPassword(input.password);
+      }
+      
       const user = await this.userRepo.create(
         {
           userNumber: input.userNumber,
@@ -85,18 +88,24 @@ export class UserService implements IUserService {
           userType: input.userType,
           gender: input.gender,
           birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
-          password,
+          password: hashedPassword,
           isActive: true,
           lastLogin: null,
         },
         tx
       );
-
-      await this.emailVerificationService.sendVerificationEmail(
+      if (input.role in ["admin", "psychologist"]) {
+        console.log("implementar logica de envío de email para admin y psychologist");
+        return user as User;
+      }
+      const verificationToken = await this.verificationService.createVerificationToken(user.email);
+      const verificationUrl = `${process.env.APP_FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await this.emailVerificationService.sendVerificationEmailUser(
         user.email,
         user.name || "Usuario",
-        temporaryPassword
+        verificationUrl
       );
+
 
       return user as User;
     });
@@ -152,11 +161,12 @@ export class UserService implements IUserService {
       );
 
       try {
-        await this.refreshTokenRepo.updateMany(
-          { userId: id },
-          { revokedAt: new Date() },
-          tx
-        );
+        // await this.refreshTokenRepo.updateMany(
+        //   { userId: id },
+        //   { revokedAt: new Date() },
+        //   tx
+
+        // );
       } catch (error) {
         throw BadRequest("Error al revocar tokens de sesión", {
           details: error,
@@ -180,32 +190,15 @@ export class UserService implements IUserService {
     });
   }
 
-  // async verifyEmail(token: string): Promise<void> {
-  //   await prisma.$transaction(async (tx) => {
-  //     const verificationToken =
-  //       await this.emailVerificationTokenRepo.findByToken(
-  //         token,
-  //         { user: true },
-  //         tx
-  //       );
-
-  //     if (!verificationToken) {
-  //       throw BadRequest("Token de verificación inválido");
-  //     }
-
-  //     if (verificationToken.expiresAt < new Date()) {
-  //       throw BadRequest("Token de verificación expirado");
-  //     }
-
-  //     await this.userRepo.update(
-  //       verificationToken.userId,
-  //       { isActive: true },
-  //       tx
-  //     );
-
-  //     await this.emailVerificationTokenRepo.delete(verificationToken.id, tx);
-  //   });
-  // }
+  async verifyEmail(token: string): Promise<void> {
+    const email = await this.verificationService.consumeVerificationToken(token);
+    await prisma.user.update({
+      where: { email: email! },
+      data: { 
+        verifiedEmail: true,
+      }
+    });
+  }
 
   // async requestPasswordReset(email: string): Promise<void> {
   //   const user = await this.userRepo.findByEmail(email.toLowerCase());

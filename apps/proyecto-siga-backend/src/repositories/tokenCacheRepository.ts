@@ -55,17 +55,17 @@ export class TokenCacheRepository implements ITokenCacheRepo {
     token: string,
     expiresIn: number
   ): Promise<void> {
-    const key = `${this.VERIFICATION_TOKEN_PREFIX}${email}`;
-    await redis.setEx(key, expiresIn, token);
+    const key = `${this.VERIFICATION_TOKEN_PREFIX}${token}`;
+    await redis.setEx(key, expiresIn, email);
   }
 
-  async getVerificationToken(email: string): Promise<string | null> {
-    const key = `${this.VERIFICATION_TOKEN_PREFIX}${email}`;
+  async getVerificationToken(token: string): Promise<string | null> {
+    const key = `${this.VERIFICATION_TOKEN_PREFIX}${token}`;
     return await redis.get(key);
   }
 
-  async deleteVerificationToken(email: string): Promise<void> {
-    const key = `${this.VERIFICATION_TOKEN_PREFIX}${email}`;
+  async deleteVerificationToken(token: string): Promise<void> {
+    const key = `${this.VERIFICATION_TOKEN_PREFIX}${token}`;
     await redis.del(key);
   }
 

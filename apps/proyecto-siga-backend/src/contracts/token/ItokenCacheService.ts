@@ -7,7 +7,7 @@ export interface ITokenCacheService {
   // Refresh Tokens
   validateAccessToken(userId: string, token: string): Promise<boolean>;
   validateRefreshToken(userId: string, token: string): Promise<boolean>;
-  validateVerificationToken(email: string, token: string): Promise<boolean>;
+  validateVerificationToken(token: string): Promise<{valid: boolean, email: string}>;
   getAccessToken(userId: string): Promise<string | null>;
   getRefreshToken(userId: string): Promise<string | null>;
 

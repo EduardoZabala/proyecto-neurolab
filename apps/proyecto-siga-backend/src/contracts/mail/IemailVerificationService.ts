@@ -1,8 +1,8 @@
 export interface IEmailVerificationService {
-  sendVerificationEmail(
+  sendVerificationEmailUser(
     email: string,
     name: string,
-    temporaryPassword: string,
+    verificationUrl: string,
 
   ): Promise<void>;
 }

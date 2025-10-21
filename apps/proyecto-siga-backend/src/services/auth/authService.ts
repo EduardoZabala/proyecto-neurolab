@@ -50,7 +50,7 @@ export class AuthService implements IAuthService {
     }
     const isValidPassword = await bcrypt.compare(
       credentials.password,
-      user.password
+      user.password!
     );
     if (!isValidPassword) {
       throw Unauthorized("Credenciales inválidas");

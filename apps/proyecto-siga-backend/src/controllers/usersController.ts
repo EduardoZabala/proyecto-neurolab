@@ -9,16 +9,13 @@ import { z } from "zod";
 import { NotFound } from "../utils/httpError";
 import { created } from "../utils/jsonResponse";
 
-
-
-
 // Private Routes
 export const UsersController = Router();
 const userService = container.resolve<IUserService>("UserService");
 
 UsersController.use(auth, asAdminOrPsychologist);
-const role = ["user"] as const
-// const rolesAdmin = [..,admin, "psychologist", "user"] as const; // not implemented yet 
+const role = ["user"] as const;
+// const rolesAdmin = [..,admin, "psychologist", "user"] as const; // not implemented yet
 interface userResponse {
   userNumber: string;
   email: string;
@@ -29,24 +26,33 @@ interface userResponse {
 }
 
 const CreateUserDto = z.object({
-  email: z.string().min(3).trim().transform((s) => s.toLowerCase()),
+  email: z
+    .string()
+    .min(3)
+    .trim()
+    .transform((s) => s.toLowerCase()),
   name: z.string().trim().optional().nullable(),
   role: z.enum(role),
   userNumber: z.string().min(1).trim(),
-  gender:z.string()
-})
+  gender: z.string(),
+  password: z.string().min(6).optional()
+});
 
 const userTypes = ["itmStudent", "itmEmployee", "external"] as const;
 
 const RegisterDto = z.object({
-  email: z.string().min(3).trim().transform((s) => s.toLowerCase()),
+  email: z
+    .string()
+    .min(3)
+    .trim()
+    .transform((s) => s.toLowerCase()),
   name: z.string().min(1).trim(),
   userNumber: z.string().min(1).trim(),
   userType: z.enum(userTypes),
   birthDate: z.string().optional(),
   gender: z.string().optional(),
-})
-
+  password:z.string().min(6).optional()
+});
 
 // CRUD Routes using service
 
@@ -76,7 +82,7 @@ UsersController.get(
       name: user.name || "",
       role: user.role,
       isActive: user.isActive,
-      gender: user.gender ?? ""
+      gender: user.gender ?? "",
     };
     return ok(res, userResponse, "Detalle de usuario");
   })
@@ -93,7 +99,8 @@ UsersController.post(
       name: input.name ?? "",
       userNumber: input.userNumber,
       role: input.role,
-      userType: 'external',
+      userType: "external",
+      password: input.password ?? ""
     });
     const userReponse: userResponse = {
       userNumber: user.userNumber,
@@ -101,7 +108,7 @@ UsersController.post(
       name: user.name || "",
       role: user.role,
       isActive: user.isActive,
-      gender: user.gender ?? ""
+      gender: user.gender ?? "",
     };
     return created(
       res,
@@ -110,7 +117,6 @@ UsersController.post(
     );
   })
 );
-
 
 UsersController.patch(
   "/:id/deactivate",
@@ -168,7 +174,8 @@ PublicUsersController.post(
       userType: input.userType,
       birthDate: input.birthDate,
       gender: input.gender,
-      role: 'user',
+      password: input.password,
+      role: "user",
     });
     return created(
       res,
@@ -181,9 +188,8 @@ PublicUsersController.post(
 PublicUsersController.post(
   "/verify-email",
   wrap(async (req: any, res) => {
-    const { token } = z.object({ token: z.string() }).parse(req.body);
-    console.log(token);
-    // await userService.verifyEmail(token);
+    const { token,email } = z.object({ token: z.string(), email: z.string() }).parse(req.body);
+    await userService.verifyEmail(token,email);
     return ok(
       res,
       null,
@@ -251,7 +257,7 @@ PublicUsersController.post(
       userType: input.userType,
       birthDate: input.birthDate,
       gender: input.gender,
-      role: 'user',
+      role: "user",
     });
     return created(
       res,
