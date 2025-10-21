@@ -11,10 +11,11 @@ import type { IUserRepo } from "../../contracts/user/IuserRepo";
 import { Unauthorized, BadRequest } from "../../utils/httpError";
 import { checkPassword } from "../../security/passwordPolicy";
 import { User } from "../../contracts";
-
 @injectable()
 export class AuthService implements IAuthService {
-  constructor(@inject("UserRepo") private readonly userRepo: IUserRepo) {}
+  constructor(
+    @inject("UserRepo") private readonly userRepo: IUserRepo,
+  ) {}
   private async HashPassword(password: string): Promise<string> {
     const rounds = Number(process.env.BCRYPT_SALT_ROUNDS);
     const saltRounds = Number.isFinite(rounds) && rounds > 0 ? rounds : 10;
@@ -36,7 +37,7 @@ export class AuthService implements IAuthService {
         userType: user.userType,
         gender: user.gender || "",
         isActive: user.isActive,
-        lastLogin: user.lastLogin 
+        lastLogin: user.lastLogin,
       },
     };
   }
@@ -63,7 +64,7 @@ export class AuthService implements IAuthService {
       role: user.role,
       userType: user.userType,
       isActive: user.isActive,
-      lastLogin: user.lastLogin || undefined
+      lastLogin: user.lastLogin || undefined,
     };
   }
 

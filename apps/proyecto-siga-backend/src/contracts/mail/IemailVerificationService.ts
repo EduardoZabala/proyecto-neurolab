@@ -3,7 +3,6 @@ export interface IEmailVerificationService {
     email: string,
     name: string,
     temporaryPassword: string,
-    verificationToken: string,
 
   ): Promise<void>;
 }

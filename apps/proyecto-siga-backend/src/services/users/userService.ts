@@ -6,33 +6,29 @@ import {
   User,
   CreateUserInput,
 } from "../../contracts/user/IuserService";
+import { generateSecurePassword } from "../../utils/sendEmail";
 import prisma from "@packages/libs/prisma";
 import { BadRequest, NotFound } from "../../utils/httpError";
 import { IEmailVerificationService } from "../../contracts/mail/IemailVerificationService";
-import { IVerificationService } from "../../contracts/mail/IverificationService";
+// import { IVerificationService } from "../../contracts/mail/IverificationService";
 import { IUserRepo } from "../../contracts/user/IuserRepo";
 import { IRefreshTokenRepo } from "../../contracts/auth/IrefreshTokenRepo";
-import { IEmailVerificationTokenRepo } from "../../contracts/mail/IemailVerificationTokenRepo";
+// import { IEmailVerificationTokenRepo } from "../../contracts/mail/IemailVerificationTokenRepo";
 
 @injectable()
 export class UserService implements IUserService {
   constructor(
     @inject("EmailVerificationService")
     private readonly emailVerificationService: IEmailVerificationService,
-    @inject("VerificationService")
-    private readonly verificationService: IVerificationService,
-    @inject("UserRepo") private readonly userRepo: IUserRepo,
-    @inject("EmailVerificationTokenRepo")
-    private readonly emailVerificationTokenRepo: IEmailVerificationTokenRepo,
+    @inject("UserRepo")
+    private readonly userRepo: IUserRepo,
     // @inject("PasswordResetTokenRepo")
     // private readonly passwordResetTokenRepo: IPasswordResetTokenRepo,
     @inject("RefreshTokenRepo")
     private readonly refreshTokenRepo: IRefreshTokenRepo
   ) {}
 
-  private async HashPassword(
-    password: string
-  ): Promise<string> {
+  private async HashPassword(password: string): Promise<string> {
     const rounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
     const saltRounds = Number.isFinite(rounds) && rounds > 0 ? rounds : 10;
     return bcrypt.hash(password, saltRounds);
@@ -64,6 +60,7 @@ export class UserService implements IUserService {
       }
 
       const email = input.email.toLowerCase();
+
       if (
         input.userType === "itmStudent" &&
         !email.endsWith("@correo.itm.edu.co")
@@ -76,11 +73,8 @@ export class UserService implements IUserService {
         throw BadRequest("Los empleados deben usar correo @itm.edu.co");
       }
 
-      const temporaryPassword =
-        this.verificationService.generateSecurePassword();
-      const password = await this.HashPassword(
-        temporaryPassword
-      );
+      const temporaryPassword = await generateSecurePassword();
+      const password = await this.HashPassword(temporaryPassword);
       console.log(`Temporary password: ${temporaryPassword}`); //Eliminar luego
       const user = await this.userRepo.create(
         {
@@ -98,27 +92,10 @@ export class UserService implements IUserService {
         tx
       );
 
-      const verificationToken = jwt.sign(
-        { userId: user.userId, type: "email_verification" },
-        process.env.JWT_SECRET!,
-        { expiresIn: "24h" }
-      );
-      
-      //Mover a redis
-      await this.emailVerificationTokenRepo.create(
-        {
-          token: verificationToken,
-          user: { connect: { userId: user.userId } },
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        },
-        tx
-      );
-
       await this.emailVerificationService.sendVerificationEmail(
         user.email,
         user.name || "Usuario",
-        temporaryPassword,
-        verificationToken
+        temporaryPassword
       );
 
       return user as User;
