@@ -1,6 +1,6 @@
 import { Prisma, test } from "@prisma/client";
 import prisma from '@packages/libs/prisma'
-import { ITestRepo } from "../contracts/test/itestRepo";
+import { ITestRepo } from "../contracts/test/ItestRepo";
 
 
 export class TestRepository implements ITestRepo {

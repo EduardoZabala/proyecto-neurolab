@@ -4,7 +4,7 @@ import { CommonDtos } from "../shared/validators";
 import { Router } from "express";
 import { wrap } from "../middleware/async";
 import { ok } from "../utils/jsonResponse";
-import { ITestService } from "../contracts/test/itestService";
+import { ITestService } from "../contracts/test/ItestService";
 import { z } from "zod";
 import { NotFound } from "../utils/httpError";
 import { created } from "../utils/jsonResponse";

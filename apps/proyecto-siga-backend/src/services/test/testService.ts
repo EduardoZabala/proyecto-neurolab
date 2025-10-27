@@ -6,10 +6,10 @@ import {
   //TestWithDetails, 
   //TestFilters,
   Test
-} from "../../contracts/test/itestService";
+} from "../../contracts/test/ItestService";
 import prisma from "@packages/libs/prisma";
 import { BadRequest, NotFound } from "../../utils/httpError";
-import type { ITestRepo } from "../../contracts/test/itestRepo";
+import type { ITestRepo } from "../../contracts/test/ItestRepo";
 //import type { IUserRepo } from "../../contracts/user/IuserRepo";
 
 @injectable()
