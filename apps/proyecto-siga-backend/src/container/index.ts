@@ -21,6 +21,6 @@ container.register("TestService",TestService)
 //register dependencies - repository
 container.register("RefreshTokenRepo", RefreshTokenRepository)
 container.register("EmailVerificationTokenRepo", EmailVerificationTokenRepository)
-container.register("TestRepo", TestRepository)
+container.register("TestRepo", { useClass: TestRepository })
 
 export default container
