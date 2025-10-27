@@ -4,8 +4,14 @@ import { AuthController } from "../controllers/authController";
 import {TestsController} from "../controllers/testsController"
 export const router = Router();
 
-
+// privates routes
 router.use('/users',UsersController);
 router.use('/auth',AuthController);
-router.use('/auth',PublicUsersController);
 router.use('/tests',TestsController);
+
+// public routes
+router.use('/public/users', PublicUsersController)
+
+
+
+
