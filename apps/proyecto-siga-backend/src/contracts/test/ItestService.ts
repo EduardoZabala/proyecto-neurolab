@@ -34,7 +34,7 @@ export interface CreateTestInput {
   title: string;
   description?: string;
   isPublished: boolean;
-  createdByNumber: string;
+  createdByNumber?: string;
 }
 
 export interface UpdateTestInput {

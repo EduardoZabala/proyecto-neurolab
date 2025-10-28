@@ -1,4 +1,4 @@
-import { auth, asAdminOrPsychologist } from "../middleware/auth";
+import { auth, asAdminOrPsychologist, asAdmin } from "../middleware/auth";
 import container from "../container/index";
 import { CommonDtos } from "../shared/validators";
 import { Router } from "express";
@@ -21,7 +21,7 @@ const CreateTestDto = z.object({
   testCode: z.string().min(1).trim(),
   title: z.string().min(1).trim(),
   description: z.string().optional(),
-  createdByNumber: z.string().min(1).trim(),
+  createdByNumber: z.string().min(1).trim().optional(),
 });
 
 const UpdateTestDto = z.object({
@@ -37,7 +37,7 @@ const UpdateTestDto = z.object({
 TestsController.get(
   "/",
   auth,
-  asAdminOrPsychologist,
+  asAdmin,
   wrap(async (req: any, res) => {
 
     const tests = await testService.getTests();
@@ -49,7 +49,7 @@ TestsController.get(
 TestsController.get(
   "/:id",
   auth,
-  asAdminOrPsychologist,
+  asAdmin,
   wrap(async (req: any, res) => {
     const { id } = CommonDtos.IdParam.parse(req.params);
     const test = await testService.getTestById(id);
@@ -66,7 +66,7 @@ TestsController.get(
 TestsController.post(
   "/",
   auth,
-  asAdminOrPsychologist,
+  asAdmin,
   wrap(async (req: any, res) => {
     const input = CreateTestDto.parse(req.body);
     
@@ -75,7 +75,7 @@ TestsController.post(
       title: input.title,
       description: input.description,
       isPublished: false,
-      createdByNumber: input.createdByNumber,
+      createdByNumber: input.createdByNumber || "",
     });
     
     return created(res, test, "Test creado con éxito");
@@ -86,7 +86,7 @@ TestsController.post(
 TestsController.patch(
   "/:id",
   auth,
-  asAdminOrPsychologist,
+  asAdmin,
   wrap(async (req: any, res) => {
     const { id } = CommonDtos.IdParam.parse(req.params);
     const input = UpdateTestDto.parse(req.body);
@@ -100,7 +100,7 @@ TestsController.patch(
 TestsController.delete(
   "/:id",
   auth,
-  asAdminOrPsychologist,
+  asAdmin,
   wrap(async (req: any, res) => {
     const { id } = CommonDtos.IdParam.parse(req.params);
     await testService.deleteTest(id);
@@ -109,10 +109,10 @@ TestsController.delete(
 );
 
 // POST /api/tests/:id/publish - Publicar test
-TestsController.post(
+TestsController.patch(
   "/:id/publish",
   auth,
-  asAdminOrPsychologist,
+  asAdmin,
   wrap(async (req: any, res) => {
     const { id } = CommonDtos.IdParam.parse(req.params);
     const test = await testService.publishTest(id);
@@ -121,10 +121,10 @@ TestsController.post(
 );
 
 // POST /api/tests/:id/unpublish - Despublicar test
-TestsController.post(
+TestsController.patch(
   "/:id/unpublish",
   auth,
-  asAdminOrPsychologist,
+  asAdmin,
   wrap(async (req: any, res) => {
     const { id } = CommonDtos.IdParam.parse(req.params);
     const test = await testService.unpublishTest(id);

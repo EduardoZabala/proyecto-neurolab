@@ -46,9 +46,9 @@ export class TestService implements ITestService {
           description: input.description,
           testCode: input.testCode,
           isPublished: false,
-          createdBy: {
+          ...(input.createdByNumber && {createdBy: {
             connect: { userNumber: input.createdByNumber }
-          }
+          }})
         }
       )
       return test as Test;
